@@ -30,10 +30,7 @@ public class Player : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		cam.transform.Translate(transform.position - cam.transform.position, Space.World);
-
-		SkiTurn(Mathf.Cos(Time.time * 1.5f));
-		
+		cam.transform.Translate(transform.position - cam.transform.position, Space.World);		
 	}
 
 	void FixedUpdate() {
@@ -56,7 +53,6 @@ public class Player : MonoBehaviour {
 
 	public void SkiTurn(float amount) {
 		turnInput = amount;
-		Debug.Log(turnInput);
 	}
 
 	public void ChangeSlope(float slope) {
