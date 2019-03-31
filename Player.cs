@@ -11,21 +11,28 @@ public class Player : MonoBehaviour {
 	float slope;
 
 	Vector3 gravityVector = 9.8f * Vector3.down; // Gravitational acceleration in meters per second squared.
-	float speed = 0f;
-	float hardMaxSpeed = 30f;
-	float stopCoastingSpeed = 0.1f; // Speed to check for rounding velocity to zero.
-	float stopCoastingBrake = 0.9f;
-	float stopCoastingAngle = 89.5f;
-	float currentMaxSpeed = 0f;
 	Vector3 moveDirection = Vector3.forward;
 	Vector3 skiDirection = Vector3.forward;
 	Vector3 velocity;
+	
+	float speed = 0f;
+	float hardMaxSpeed = 30f;
+	float currentMaxSpeed = 0f;
 	float drag = 1f;
 	float maxDrag = 6.92964645563f; // Maximum drag at 45 degrees.
+	
 	float brakeInput = 0f;
 	float brakeStrength = 0f;
 	float maxBrake = 12.5f;
+	float stopCoastingSpeed = 0.1f; // Speed to check for rounding velocity to zero.
+	float stopCoastingBrake = 0.9f;
+	float stopCoastingAngle = 89.5f;
 	
+	float tuck = 0f;
+	float tuckInput = 0f;
+	float tuckRate = 2f;
+	float tuckDragReduction = 0.25f;
+
 	bool inAir = false;
 
 	float turnInput = 0f;
@@ -51,9 +58,10 @@ public class Player : MonoBehaviour {
 		float dt = Time.deltaTime;
 
 		speed = velocity.magnitude;
+		Debug.Log("Speed: " + speed);
 
 		if (turnInput != 0f) {
-			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeInput) * dt;
+			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeInput / 2f - tuckInput / 2f) * dt;
 			float targetSkiAngle = skiAngle + dAngle;
 			if (skiAngleMaxRight < Mathf.Abs(targetSkiAngle)) {
 				dAngle = 0f < dAngle ? skiAngleMaxRight - skiAngle : -skiAngleMaxRight - skiAngle;
@@ -62,6 +70,14 @@ public class Player : MonoBehaviour {
 			skiDirection = rotQuat * skiDirection;
 			skis.transform.Rotate(planeNorm, dAngle, Space.World);
 			skiAngle += dAngle;
+		}
+
+		float dTuck = tuckInput - tuck;
+		if (dTuck != 0f) {
+			dTuck = tuckRate * dt * Mathf.Sign(dTuck);
+			tuck += dTuck;
+			tuck = tuck < 0f ? 0f : tuck;
+			tuck = 1f < tuck ? 1f : tuck;
 		}
 
 		if (!inAir) {
@@ -74,7 +90,7 @@ public class Player : MonoBehaviour {
 			moveDirection = Vector3.RotateTowards(moveDirection, skiDirection, (1f - turnFraction * 0.95f) * maxSkiTurnRate * 0.075f * dt * Mathf.Pow(1f - fractionMaxSpeed * 0.95f, 2f), 0f);
 			velocity = moveDirection * speed;
 			velocity += Vector3.Project(gravityVector * dt, moveDirection);
-			drag = maxDrag * dt * fractionMaxSpeed; // Drag based on speed
+			drag = maxDrag * (1f - tuck * tuckDragReduction) * dt * fractionMaxSpeed; // Drag based on speed
 			velocity -= velocity.normalized * drag;
 			if (speed < stopCoastingSpeed && (stopCoastingBrake < brakeInput || stopCoastingAngle <= Vector3.Angle(skiDirection, Vector3.forward))) {
 				velocity = Vector3.zero;
@@ -90,6 +106,10 @@ public class Player : MonoBehaviour {
 
 	public void ApplyBrake(float amount) {
 		brakeInput = amount;
+	}
+
+	public void Tuck(float amount) {
+		tuckInput = amount;
 	}
 
 	public void ChangeSlope(float slope) {
