@@ -41,6 +41,9 @@ public class Player : MonoBehaviour {
 	float skiAngleMaxRight = 90f;
 	float skiAngleMaxLeft;
 	float maxSkiTurnRate = 120f; // in degrees per second.
+	float maxVelocityTurnRate = 9f;
+	float turnSpeedModifier = 0.95f;
+	float brakeTuckModifier = 0.5f;
 	Quaternion rotQuat;
 
 	// Use this for initialization
@@ -61,7 +64,7 @@ public class Player : MonoBehaviour {
 		Debug.Log("Speed: " + speed);
 
 		if (turnInput != 0f) {
-			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeInput / 2f - tuckInput / 2f) * dt;
+			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeTuckModifier * (brakeInput - tuckInput)) * dt;
 			float targetSkiAngle = skiAngle + dAngle;
 			if (skiAngleMaxRight < Mathf.Abs(targetSkiAngle)) {
 				dAngle = 0f < dAngle ? skiAngleMaxRight - skiAngle : -skiAngleMaxRight - skiAngle;
@@ -81,13 +84,13 @@ public class Player : MonoBehaviour {
 		}
 
 		if (!inAir) {
-			float turnFraction = Vector3.Angle(velocity, skiDirection) / 90f;
+			float turnFraction = Vector3.Angle(velocity, skiDirection) / skiAngleMaxRight;
 			turnFraction *= turnFraction;
 			brakeStrength = (brakeInput + turnFraction) * maxBrake * dt;
 			speed -= brakeStrength;
 			speed *= 0f < speed ? 1f : 0f;
 			float fractionMaxSpeed = speed / hardMaxSpeed;
-			moveDirection = Vector3.RotateTowards(moveDirection, skiDirection, (1f - turnFraction * 0.95f) * maxSkiTurnRate * 0.075f * dt * Mathf.Pow(1f - fractionMaxSpeed * 0.95f, 2f), 0f);
+			moveDirection = Vector3.RotateTowards(moveDirection, skiDirection, (1f - turnFraction * turnSpeedModifier) * maxVelocityTurnRate * dt * Mathf.Pow(1f - fractionMaxSpeed * turnSpeedModifier, 2f), 0f);
 			velocity = moveDirection * speed;
 			velocity += Vector3.Project(gravityVector * dt, moveDirection);
 			drag = maxDrag * (1f - tuck * tuckDragReduction) * dt * fractionMaxSpeed; // Drag based on speed
