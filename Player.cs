@@ -61,7 +61,6 @@ public class Player : MonoBehaviour {
 		float dt = Time.deltaTime;
 
 		speed = velocity.magnitude;
-		Debug.Log("Speed: " + speed);
 
 		if (turnInput != 0f) {
 			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeTuckModifier * (brakeInput - tuckInput)) * dt;
