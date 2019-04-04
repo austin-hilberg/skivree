@@ -10,6 +10,7 @@ public class LevelManager : MonoBehaviour {
 	float cosAngle;
 
 	public GameObject tree;
+	public GameObject tallTree;
 	public GameObject gate;
 	public GameObject mogulGroup;
 
@@ -22,6 +23,8 @@ public class LevelManager : MonoBehaviour {
 	float slalomWidth = 25f;
 	float slalomGateWidth = 15f;
 	float slalomGateDistance = 20f;
+
+	int treeSlalomGates = 39;
 
 	List<Vector3> occupiedPositions;
 
@@ -44,17 +47,26 @@ public class LevelManager : MonoBehaviour {
 		// Slalom setup:
 		ClearOccupied();
 		float xSlalom = freeWidth / 2f + bufferWidth + slalomWidth / 2f;
-		AddIntervalObject (gate, slalomGates / 2, xSlalom - slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance, slalomGateDistance * 2, false);
+		AddIntervalObject (gate, Mathf.CeilToInt(slalomGates / 2f), xSlalom - slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance, slalomGateDistance * 2, false);
 		AddIntervalObject (gate, slalomGates / 2, xSlalom + slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance * 2, slalomGateDistance * 2, true);
 		float[] xMogulGroupBounds = new float[] {xSlalom - slalomWidth / 2f, xSlalom + slalomWidth / 2f};
 		float[] zMogulGroupBounds = new float[] {zStartGates, zStartGates + slalomGateDistance * slalomGates};
 		SingleRandomObjectArea (mogulGroup, xMogulGroupBounds, 0f, zMogulGroupBounds, new int[] {1, slalomGates}, new int[] {0, 3}, true, true, minimumObstacleDistance);
+		List<GameObject> bufferObstacles = new List<GameObject>();
+		bufferObstacles.Add(tree);
+		bufferObstacles.Add(tallTree);
+		bufferObstacles.Add(mogulGroup);
+		float[] obProb = new float[] {0.25f, 0.25f, 0.75f};
+		bool[] yRandomRotation = new bool[] {true, true, true};
+		bool[] normalToPlane = new bool[] {false, false, true};
+		float[] xRange = new float[] {-freeWidth / 2f, freeWidth / 2f};
+		float[] zRange = new float[] {zStartGates, zStartGates + 200f};
+		RandomObjectArea(bufferObstacles, obProb, xRange, 0f, zRange, new int[] {2, 8}, new int[] {2, 4}, yRandomRotation, normalToPlane, minimumObstacleDistance);
 
-
-		AddIntervalObject(tree, 60, -10f, 0f, 5f, 5f, false);
-		AddIntervalObject(tree, 60, 10f, 0f, 5f, 5f, false);
+		//AddIntervalObject(tree, 60, -10f, 0f, 5f, 5f, false);
 
 		tree.SetActive(false);
+		tallTree.SetActive(false);
 		gate.SetActive(false);
 		mogulGroup.SetActive(false);
 
@@ -93,13 +105,19 @@ public class LevelManager : MonoBehaviour {
 		for (int i = 0; i < tiles[0]; i ++) {
 			for (int j = 0; j < tiles[1]; j ++) {
 				for (int n = 0; n < Random.Range(obPerTileRange[0], obPerTileRange[1] + 1); n ++) {
-					int obInd = Random.Range(0, obs.Count);
-					float xStart = xRange[0] + tileWidth * i;
-					float zStart = zFlatRange[0] + tileLength * j;
-					Vector3 pos = RandomUnoccupiedPosition(xStart, xStart + tileWidth, yOffset, zStart, zStart + tileLength, minDist);
-					float xRotation = normalToPlane[obInd] ? slope : 0f;
-					float yRotation = yRandomRotation[obInd] ? Random.Range(0f, 360f) : 0f;
-					PlaceObject(obs[obInd], pos, xRotation, yRotation, 0f);
+					float ob = Random.Range(0f, 1f);
+					for (int o = 0; o < obProb.Length; o ++) {
+						if (ob <= obProb[o]) {
+							float xStart = xRange[0] + tileWidth * i;
+							float zStart = zFlatRange[0] + tileLength * j;
+							Vector3 pos = RandomUnoccupiedPosition(xStart, xStart + tileWidth, yOffset, zStart, zStart + tileLength, minDist);
+							float xRotation = normalToPlane[o] ? slope : 0f;
+							float yRotation = yRandomRotation[o] ? Random.Range(0f, 360f) : 0f;
+							PlaceObject(obs[o], pos, xRotation, yRotation, 0f);
+						else {
+							ob -= obProb[o];
+						}
+					}
 				}
 			}
 		}
