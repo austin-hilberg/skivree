@@ -114,6 +114,8 @@ public class LevelManager : MonoBehaviour {
 							float xRotation = normalToPlane[o] ? slope : 0f;
 							float yRotation = yRandomRotation[o] ? Random.Range(0f, 360f) : 0f;
 							PlaceObject(obs[o], pos, xRotation, yRotation, 0f);
+							break;
+						}
 						else {
 							ob -= obProb[o];
 						}
