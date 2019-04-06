@@ -34,6 +34,7 @@ public class Player : MonoBehaviour {
 	float tuckDragReduction = 0.25f;
 
 	bool inAir = false;
+	bool crashing = true;
 
 	float turnInput = 0f;
 	float turnFraction = 0f;
@@ -61,6 +62,12 @@ public class Player : MonoBehaviour {
 		float dt = Time.deltaTime;
 
 		speed = velocity.magnitude;
+
+		if (crashing) {
+			turnInput = 0f;
+			brakeInput = 0.5f;
+			crashing = stopCoastingSpeed < speed;
+		}
 
 		if (turnInput != 0f) {
 			float dAngle = maxSkiTurnRate * turnInput * (1 + brakeTuckModifier * (brakeInput - tuckInput)) * dt;
@@ -121,5 +128,9 @@ public class Player : MonoBehaviour {
 		planeNorm = rotQuat * Vector3.up;
 		moveDirection = rotQuat * moveDirection;
 		skiDirection = rotQuat * skiDirection;
+	}
+
+	public void Crash() {
+		crashing = true;
 	}
 }
