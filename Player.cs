@@ -85,7 +85,7 @@ public class Player : MonoBehaviour {
 		if (!inAir) {
 			float turnFraction = Vector3.Angle(velocity, skiDirection) / skiAngleMaxRight;
 			turnFraction *= turnFraction;
-			brakeStrength = (brakeInput + turnFraction) * maxBrake * dt;
+			brakeStrength = Mathf.Sqrt((brakeInput + turnFraction) / 2f) * maxBrake * dt;
 			speed -= brakeStrength;
 			speed *= 0f < speed ? 1f : 0f;
 			float fractionMaxSpeed = speed / hardMaxSpeed;
