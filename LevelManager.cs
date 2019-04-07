@@ -13,6 +13,7 @@ public class LevelManager : MonoBehaviour {
 	public GameObject tallTree;
 	public GameObject gate;
 	public GameObject mogulGroup;
+	public GameObject slalomEntry;
 
 	float minimumObstacleDistance = 6f;
 
@@ -23,6 +24,9 @@ public class LevelManager : MonoBehaviour {
 	float slalomWidth = 25f;
 	float slalomGateWidth = 15f;
 	float slalomGateDistance = 20f;
+	bool slalomStartLeft = true;
+	float slalomGateSlopeDistance;
+	float xSlalom;
 
 	int treeSlalomGates = 39;
 
@@ -43,10 +47,12 @@ public class LevelManager : MonoBehaviour {
 		radSlope = slope * Mathf.Deg2Rad;
 		sinAngle = Mathf.Sin(radSlope);
 		cosAngle = Mathf.Cos(radSlope);
+		slalomGateSlopeDistance = slalomGateDistance * cosAngle;
 
 		// Slalom setup:
+		xSlalom = freeWidth / 2f + bufferWidth + slalomWidth / 2f;
+		slalomEntry.transform.Translate(PosOnSlope(xSlalom, 0f, zStartGates), Space.World);
 		ClearOccupied();
-		float xSlalom = freeWidth / 2f + bufferWidth + slalomWidth / 2f;
 		AddIntervalObject (gate, Mathf.CeilToInt(slalomGates / 2f), xSlalom - slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance, slalomGateDistance * 2, false);
 		AddIntervalObject (gate, slalomGates / 2, xSlalom + slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance * 2, slalomGateDistance * 2, true);
 		float[] xMogulGroupBounds = new float[] {xSlalom - slalomWidth / 2f, xSlalom + slalomWidth / 2f};
@@ -69,7 +75,7 @@ public class LevelManager : MonoBehaviour {
 		tallTree.SetActive(false);
 		gate.SetActive(false);
 		mogulGroup.SetActive(false);
-
+		ClearOccupied();
 	}
 
 	void AddIntervalObject (GameObject gob, int n, float x, float y, float zStart, float zInterval, bool flip) {
@@ -157,4 +163,27 @@ public class LevelManager : MonoBehaviour {
 		return pos;
 	}
 
+	public int SlalomGates() {
+		return slalomGates;
+	}
+
+	public float SlalomX () {
+		return xSlalom;
+	}
+
+	public float StartZ() {
+		return zStartGates * cosAngle;
+	}
+
+	public float SlalomZ() {
+		return slalomGateDistance * cosAngle;
+	}
+
+	public float SlalomW(){
+		return slalomGateWidth;
+	}
+
+	public bool SlalomStartLeft() {
+		return slalomStartLeft;
+	}
 }
