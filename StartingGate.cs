@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class StartingGate : MonoBehaviour {
 
-	public ScoreTracker.Mode mode;
+	public LevelManager.ScoreMode mode;
 
 	// Use this for initialization
 	void Start () {
@@ -18,7 +18,7 @@ public class StartingGate : MonoBehaviour {
 
 	public void OnTriggerEnter (Collider other) {
 		if (other.gameObject.name == "Player") {
-			other.gameObject.GetComponent<ScoreTracker>().ModeStart(mode);
+			other.gameObject.GetComponent<Player>().StartScoring(mode);
 		}
 	}
 }

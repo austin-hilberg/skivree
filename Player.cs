@@ -47,10 +47,17 @@ public class Player : MonoBehaviour {
 	float brakeTuckModifier = 0.5f;
 	Quaternion rotQuat;
 
+	bool keepingScore = false;
+	//ScoreTracker scoreTracker;
+	LevelManager.ScoreMode scoreMode;
+	LevelManager level;
+
 	// Use this for initialization
 	void Start () {
 		skis = transform.Find("Skis").gameObject;
 		skiAngleMaxLeft = 360f - skiAngleMaxRight;
+		// scoreTracker = GetComponent<ScoreTracker>();
+		level = GameObject.Find("Game").GetComponent<LevelManager>();
 	}
 	
 	// Update is called once per frame
@@ -107,6 +114,16 @@ public class Player : MonoBehaviour {
 		}
 
 		transform.Translate(velocity * dt, Space.World);
+
+		if (keepingScore) {
+			switch (scoreMode) {
+				case LevelManager.ScoreMode.Slalom:
+					keepingScore = level.UpdateProgress(transform.position);
+				break;
+				default:
+				break;
+			}
+		}
 	}
 
 	public void TurnSkis(float amount) {
@@ -132,5 +149,17 @@ public class Player : MonoBehaviour {
 
 	public void Crash() {
 		crashing = true;
+	}
+
+	public void StartScoring(LevelManager.ScoreMode mode) {
+		if (!keepingScore) {
+			keepingScore = true;
+			scoreMode = mode;
+			level.StartScoring(mode, Time.time);
+		}
+	}
+
+	public void StopScoring() {
+		keepingScore = false;
 	}
 }
