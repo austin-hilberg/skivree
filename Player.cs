@@ -52,12 +52,21 @@ public class Player : MonoBehaviour {
 	LevelManager.ScoreMode scoreMode;
 	LevelManager level;
 
+	AudioSource crashSound;
+	AudioSource rightGateSound;
+	AudioSource wrongGateSound;
+
 	// Use this for initialization
 	void Start () {
 		skis = transform.Find("Skis").gameObject;
 		skiAngleMaxLeft = 360f - skiAngleMaxRight;
 		// scoreTracker = GetComponent<ScoreTracker>();
 		level = GameObject.Find("Game").GetComponent<LevelManager>();
+
+		Transform sounds = transform.Find("Sounds");
+		crashSound = sounds.Find("Crash").GetComponent<AudioSource>();
+		rightGateSound = sounds.Find("RightGate").GetComponent<AudioSource>();
+		wrongGateSound = sounds.Find("WrongGate").GetComponent<AudioSource>();
 	}
 	
 	// Update is called once per frame
@@ -118,7 +127,10 @@ public class Player : MonoBehaviour {
 		if (keepingScore) {
 			switch (scoreMode) {
 				case LevelManager.ScoreMode.Slalom:
-					keepingScore = level.UpdateProgress(transform.position);
+					level.UpdateProgress(transform.position);
+				break;
+				case LevelManager.ScoreMode.Tree:
+					level.UpdateProgress(transform.position);
 				break;
 				default:
 				break;
@@ -149,6 +161,7 @@ public class Player : MonoBehaviour {
 
 	public void Crash() {
 		crashing = true;
+		crashSound.Play();
 	}
 
 	public void StartScoring(LevelManager.ScoreMode mode) {
@@ -161,5 +174,14 @@ public class Player : MonoBehaviour {
 
 	public void StopScoring() {
 		keepingScore = false;
+	}
+
+	public void GateSound(bool correct) {
+		if (correct) {
+			rightGateSound.Play();
+		}
+		else {
+			wrongGateSound.Play();
+		}
 	}
 }

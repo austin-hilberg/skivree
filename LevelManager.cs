@@ -11,26 +11,37 @@ public class LevelManager : MonoBehaviour {
 
 	public GameObject tree;
 	public GameObject tallTree;
+	public GameObject deadTree;
 	public GameObject gate;
 	public GameObject mogulGroup;
 	public GameObject slalomEntry;
+	public GameObject treeSlalomEntry;
 
-	float minimumObstacleDistance = 6f;
+	float minObsDist = 6f;
 
 	float zStartGates = 50f;
 	float bufferWidth = 10f;
 	float freeWidth = 50f;
+
 	int slalomGates = 24;
 	float slalomWidth = 25f;
 	float slalomGateWidth = 15f;
 	float slalomGateDistance = 20f;
-	bool slalomStartLeft = true;
+	bool slalomStartLeft = false;
 	float xSlalom;
 	float penaltySlalom = 5f;
 
-	Vector3 triggerDimensions = new Vector3(20f, 5f, 0.25f);
+	float treeAndFreeLength;
 
 	int treeSlalomGates = 39;
+	float treeSlalomWidth = 25f;
+	float treeSlalomGateWidth = 10f;
+	float treeSlalomGateDistance = 25f;
+	bool treeSlalomStartLeft = false;
+	float xTreeSlalom;
+	float penaltyTreeSlalom = 5f;
+
+	Vector3 triggerDimensions = new Vector3(20f, 5f, 0.25f);
 
 	List<Vector3> occupiedPositions;
 	
@@ -40,9 +51,11 @@ public class LevelManager : MonoBehaviour {
 	int gateProgress = 0;
 	int failedGates = 0;
 
+	Player player;
+
 	// Use this for initialization
 	void Start () {
-		
+		player = GameObject.Find("Player").GetComponent<Player>();
 	}
 	
 	// Update is called once per frame
@@ -56,6 +69,8 @@ public class LevelManager : MonoBehaviour {
 		sinAngle = Mathf.Sin(radSlope);
 		cosAngle = Mathf.Cos(radSlope);
 
+		treeAndFreeLength = (treeSlalomGates + 1) * treeSlalomGateDistance;
+
 		// Slalom setup:
 		xSlalom = freeWidth / 2f + bufferWidth + slalomWidth / 2f;
 		slalomEntry.transform.Translate(PosOnSlope(xSlalom, 0f, zStartGates), Space.World);
@@ -63,13 +78,18 @@ public class LevelManager : MonoBehaviour {
 		slalomBox.size = triggerDimensions;
 		slalomBox.center = new Vector3 (slalomBox.center.x, slalomBox.center.y + triggerDimensions.y / 2f, slalomBox.center.z);
 		slalomBox.isTrigger = true;
+		StartingGate slalomGate = slalomEntry.AddComponent<StartingGate>();
+		slalomGate.SetMode(ScoreMode.Slalom);
 		ClearOccupied();
+
 		AddIntervalObject (gate, Mathf.CeilToInt(slalomGates / 2f), xSlalom - slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance, slalomGateDistance * 2, false);
 		AddIntervalObject (gate, slalomGates / 2, xSlalom + slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance * 2, slalomGateDistance * 2, true);
 		float[] xMogulGroupBounds = new float[] {xSlalom - slalomWidth / 2f, xSlalom + slalomWidth / 2f};
 		float[] zMogulGroupBounds = new float[] {zStartGates, zStartGates + slalomGateDistance * slalomGates};
-		SingleRandomObjectArea (mogulGroup, xMogulGroupBounds, 0f, zMogulGroupBounds, new int[] {1, slalomGates}, new int[] {0, 3}, true, true, minimumObstacleDistance);
+		SingleRandomObjectArea (mogulGroup, xMogulGroupBounds, 0f, zMogulGroupBounds, new int[] {1, slalomGates}, new int[] {0, 3}, true, true, minObsDist);
 		
+
+		// Buffer setup:
 		List<GameObject> bufferObstacles = new List<GameObject>();
 		bufferObstacles.Add(tree);
 		bufferObstacles.Add(tallTree);
@@ -79,12 +99,35 @@ public class LevelManager : MonoBehaviour {
 		bool[] normalToPlane = new bool[] {false, false, true};
 		float[] xRange = new float[] {-freeWidth / 2f, freeWidth / 2f};
 		float[] zRange = new float[] {zStartGates, zStartGates + 200f};
-		RandomObjectArea(bufferObstacles, obProb, xRange, 0f, zRange, new int[] {2, 8}, new int[] {2, 4}, yRandomRotation, normalToPlane, minimumObstacleDistance);
+		RandomObjectArea(bufferObstacles, obProb, xRange, 0f, zRange, new int[] {2, 8}, new int[] {2, 4}, yRandomRotation, normalToPlane, minObsDist);
 
-		//AddIntervalObject(tree, 60, -10f, 0f, 5f, 5f, false);
+		// Tree slalom setup:
+		xTreeSlalom = -(freeWidth / 2f + bufferWidth + treeSlalomWidth / 2f);
+		treeSlalomEntry.transform.Translate(PosOnSlope(xTreeSlalom, 0f, zStartGates), Space.World);
+		BoxCollider treeSlalomBox = treeSlalomEntry.AddComponent<BoxCollider>();
+		treeSlalomBox.size = triggerDimensions;
+		treeSlalomBox.center = new Vector3 (treeSlalomBox.center.x, treeSlalomBox.center.y + triggerDimensions.y / 2f, treeSlalomBox.center.z);
+		treeSlalomBox.isTrigger = true;
+		StartingGate treeSlalomGate = treeSlalomEntry.AddComponent<StartingGate>();
+		treeSlalomGate.SetMode(ScoreMode.Tree);
+
+		AddIntervalObject (gate, Mathf.CeilToInt(treeSlalomGates / 2f), xTreeSlalom - treeSlalomGateWidth / 2f, 0f, zStartGates + treeSlalomGateDistance, treeSlalomGateDistance * 2, false);
+		AddIntervalObject (gate, treeSlalomGates / 2, xTreeSlalom + treeSlalomGateWidth / 2f, 0f, zStartGates + treeSlalomGateDistance * 2, treeSlalomGateDistance * 2, true);
+		List<GameObject> treesForSlalom = new List<GameObject>();
+		treesForSlalom.Add(tree);
+		treesForSlalom.Add(tallTree);
+		treesForSlalom.Add(deadTree);
+		float[] treesForSlalomProb = new float[] {0.2f, 0.6f, 0.2f};
+		bool[] yTreesForSlalomRot = new bool[] {true, true, true};
+		bool[] treesForSlalomNorm = new bool[] {false, false, false};
+		float[] xTreesForSlalom = new float[] {xTreeSlalom - treeSlalomWidth / 2f, xTreeSlalom + treeSlalomWidth / 2f};
+		float[] zTreesForSlalom = new float[] {zStartGates, zStartGates + treeAndFreeLength};
+
+		RandomObjectArea(treesForSlalom, treesForSlalomProb, xTreesForSlalom, 0f, zTreesForSlalom, new int[] {2, treeSlalomGates}, new int[] {1, 3}, yTreesForSlalomRot, treesForSlalomNorm, minObsDist);
 
 		tree.SetActive(false);
 		tallTree.SetActive(false);
+		deadTree.SetActive(false);
 		gate.SetActive(false);
 		mogulGroup.SetActive(false);
 		ClearOccupied();
@@ -189,10 +232,10 @@ public class LevelManager : MonoBehaviour {
 						bool leftIsCorrect = slalomStartLeft ? !gateOdd : gateOdd;
 						bool leftOfGate = pos.x <= xSlalom - slalomGateWidth / 2f + (slalomStartLeft ? (gateOdd ? 1 : 0) : (gateOdd ? 0 : 1)) * slalomGateWidth;
 						if ((leftIsCorrect & leftOfGate) | (!leftIsCorrect & !leftOfGate)) {
-							Debug.Log("Passed gate!");
+							player.GateSound(true);
 						}
 						else {
-							Debug.Log("Failed gate!");
+							player.GateSound(false);
 							failedGates++;
 						}
 						gateProgress++;
@@ -200,6 +243,30 @@ public class LevelManager : MonoBehaviour {
 					else {
 						Debug.Log("Finish!");
 						float scoreTime = Time.time - scoreStartTime + (penaltySlalom * failedGates);
+						Debug.Log("Failed gates: " + failedGates);
+						Debug.Log("Slalom time: " + scoreTime);
+						return false;
+					}
+				}
+			break;
+			case ScoreMode.Tree:
+				if (pos.z >= (zStartGates + treeSlalomGateDistance * (gateProgress + 1)) * cosAngle) {
+					if (gateProgress <= treeSlalomGates) {
+						bool gateOdd = gateProgress % 2 == 1;
+						bool leftIsCorrect = treeSlalomStartLeft ? !gateOdd : gateOdd;
+						bool leftOfGate = pos.x <= xTreeSlalom - treeSlalomGateWidth / 2f + (treeSlalomStartLeft ? (gateOdd ? 1 : 0) : (gateOdd ? 0 : 1)) * treeSlalomGateWidth;
+						if ((leftIsCorrect & leftOfGate) | (!leftIsCorrect & !leftOfGate)) {
+							player.GateSound(true);
+						}
+						else {
+							player.GateSound(false);
+							failedGates++;
+						}
+						gateProgress++;
+					}
+					else {
+						Debug.Log("Finish!");
+						float scoreTime = Time.time - scoreStartTime + (penaltyTreeSlalom * failedGates);
 						Debug.Log("Failed gates: " + failedGates);
 						Debug.Log("Slalom time: " + scoreTime);
 						return false;

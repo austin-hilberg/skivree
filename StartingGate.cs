@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class StartingGate : MonoBehaviour {
 
-	public LevelManager.ScoreMode mode;
+	LevelManager.ScoreMode mode;
 
 	// Use this for initialization
 	void Start () {
@@ -14,6 +14,10 @@ public class StartingGate : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		
+	}
+
+	public void SetMode(LevelManager.ScoreMode newMode) {
+		mode = newMode;
 	}
 
 	public void OnTriggerEnter (Collider other) {
