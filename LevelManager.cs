@@ -16,6 +16,7 @@ public class LevelManager : MonoBehaviour {
 	public GameObject mogulGroup;
 	public GameObject slalomEntry;
 	public GameObject treeSlalomEntry;
+	public GameObject finishGate;
 
 	float minObsDist = 6f;
 
@@ -80,6 +81,7 @@ public class LevelManager : MonoBehaviour {
 		slalomBox.isTrigger = true;
 		StartingGate slalomGate = slalomEntry.AddComponent<StartingGate>();
 		slalomGate.SetMode(ScoreMode.Slalom);
+		Instantiate(finishGate, Vector3.zero, Quaternion.identity).transform.Translate(PosOnSlope(xSlalom, 0f, zStartGates + slalomGateDistance * (slalomGates + 1)), Space.World);
 		ClearOccupied();
 
 		AddIntervalObject (gate, Mathf.CeilToInt(slalomGates / 2f), xSlalom - slalomGateWidth / 2f, 0f, zStartGates + slalomGateDistance, slalomGateDistance * 2, false);
@@ -110,6 +112,7 @@ public class LevelManager : MonoBehaviour {
 		treeSlalomBox.isTrigger = true;
 		StartingGate treeSlalomGate = treeSlalomEntry.AddComponent<StartingGate>();
 		treeSlalomGate.SetMode(ScoreMode.Tree);
+		Instantiate(finishGate, Vector3.zero, Quaternion.identity).transform.Translate(PosOnSlope(xTreeSlalom, 0f, zStartGates + treeAndFreeLength), Space.World);
 
 		AddIntervalObject (gate, Mathf.CeilToInt(treeSlalomGates / 2f), xTreeSlalom - treeSlalomGateWidth / 2f, 0f, zStartGates + treeSlalomGateDistance, treeSlalomGateDistance * 2, false);
 		AddIntervalObject (gate, treeSlalomGates / 2, xTreeSlalom + treeSlalomGateWidth / 2f, 0f, zStartGates + treeSlalomGateDistance * 2, treeSlalomGateDistance * 2, true);
@@ -130,6 +133,7 @@ public class LevelManager : MonoBehaviour {
 		deadTree.SetActive(false);
 		gate.SetActive(false);
 		mogulGroup.SetActive(false);
+		finishGate.SetActive(false);
 		ClearOccupied();
 	}
 
@@ -227,8 +231,8 @@ public class LevelManager : MonoBehaviour {
 		switch (currentMode) {
 			case ScoreMode.Slalom:
 				if (pos.z >= (zStartGates + slalomGateDistance * (gateProgress + 1)) * cosAngle) {
-					if (gateProgress <= slalomGates) {
-						bool gateOdd = gateProgress % 2 == 1;
+					if (gateProgress < slalomGates) {
+						bool gateOdd = gateProgress % 2 == 0;
 						bool leftIsCorrect = slalomStartLeft ? !gateOdd : gateOdd;
 						bool leftOfGate = pos.x <= xSlalom - slalomGateWidth / 2f + (slalomStartLeft ? (gateOdd ? 1 : 0) : (gateOdd ? 0 : 1)) * slalomGateWidth;
 						if ((leftIsCorrect & leftOfGate) | (!leftIsCorrect & !leftOfGate)) {
@@ -251,8 +255,8 @@ public class LevelManager : MonoBehaviour {
 			break;
 			case ScoreMode.Tree:
 				if (pos.z >= (zStartGates + treeSlalomGateDistance * (gateProgress + 1)) * cosAngle) {
-					if (gateProgress <= treeSlalomGates) {
-						bool gateOdd = gateProgress % 2 == 1;
+					if (gateProgress < treeSlalomGates) {
+						bool gateOdd = gateProgress % 2 == 0;
 						bool leftIsCorrect = treeSlalomStartLeft ? !gateOdd : gateOdd;
 						bool leftOfGate = pos.x <= xTreeSlalom - treeSlalomGateWidth / 2f + (treeSlalomStartLeft ? (gateOdd ? 1 : 0) : (gateOdd ? 0 : 1)) * treeSlalomGateWidth;
 						if ((leftIsCorrect & leftOfGate) | (!leftIsCorrect & !leftOfGate)) {

@@ -127,10 +127,10 @@ public class Player : MonoBehaviour {
 		if (keepingScore) {
 			switch (scoreMode) {
 				case LevelManager.ScoreMode.Slalom:
-					level.UpdateProgress(transform.position);
+					keepingScore = level.UpdateProgress(transform.position);
 				break;
 				case LevelManager.ScoreMode.Tree:
-					level.UpdateProgress(transform.position);
+					keepingScore = level.UpdateProgress(transform.position);
 				break;
 				default:
 				break;
