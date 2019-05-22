@@ -6,11 +6,14 @@ public class Player : MonoBehaviour {
 
 	public GameObject cam;
 	GameObject skis;
+	public GameObject ground;
 
-	Vector3 planeNorm = new Vector3();
-	float slope;
+	Vector3 planeNorm = Vector3.up;
+	float slope = 0f;
+	float tanAngle;
 
-	Vector3 gravityVector = 9.8f * Vector3.down; // Gravitational acceleration in meters per second squared.
+	float g = 9.8f; // Meters per second squared.
+	Vector3 gravityVector;
 	Vector3 moveDirection = Vector3.forward;
 	Vector3 skiDirection = Vector3.forward;
 	Vector3 velocity;
@@ -36,6 +39,17 @@ public class Player : MonoBehaviour {
 	bool inAir = false;
 	bool crashing = true;
 
+	bool crouching = false; // Prep for jump.
+	float jumpBuildTime = 0f; // Amount jump has charged.
+	float timeToFullJump = 0.5f; // Time in seconds after which jump is fullly charged.
+	bool jumping = false;
+	Vector3 jumpVec;
+	float minJump = 2f; // Minimum jump speed.
+	float crouchJumpBoost = 3f; // Max jump speed gained by crouching.
+	float vertSpeed = 0f;
+	float height = 0f; // Ground clearance.
+	float dHeight; // Change in height.
+
 	float turnInput = 0f;
 	float turnFraction = 0f;
 	float skiAngle = 0f;
@@ -55,9 +69,12 @@ public class Player : MonoBehaviour {
 	AudioSource crashSound;
 	AudioSource rightGateSound;
 	AudioSource wrongGateSound;
+	AudioSource jumpSound;
+	AudioSource landSound;
 
 	// Use this for initialization
 	void Start () {
+		gravityVector = g * Vector3.down;
 		skis = transform.Find("Skis").gameObject;
 		skiAngleMaxLeft = 360f - skiAngleMaxRight;
 		// scoreTracker = GetComponent<ScoreTracker>();
@@ -67,6 +84,8 @@ public class Player : MonoBehaviour {
 		crashSound = sounds.Find("Crash").GetComponent<AudioSource>();
 		rightGateSound = sounds.Find("RightGate").GetComponent<AudioSource>();
 		wrongGateSound = sounds.Find("WrongGate").GetComponent<AudioSource>();
+		jumpSound = sounds.Find("Jump").GetComponent<AudioSource>();
+		landSound = sounds.Find("Landing").GetComponent<AudioSource>();
 	}
 	
 	// Update is called once per frame
@@ -79,10 +98,29 @@ public class Player : MonoBehaviour {
 
 		speed = velocity.magnitude;
 
+		ground.transform.Translate(transform.position.x - ground.transform.position.x, (transform.position.z * tanAngle * -1f) - ground.transform.position.y, transform.position.z - ground.transform.position.z, Space.World);
+		
+
 		if (crashing) {
 			turnInput = 0f;
 			brakeInput = 0.5f;
+			crouching = false;
+			jumpBuildTime = 0f;
+			jumping = false;
 			crashing = stopCoastingSpeed < speed;
+		}
+
+		if (crouching) {
+			jumpBuildTime = Mathf.Clamp(jumpBuildTime + dt, 0f, timeToFullJump);
+		}
+
+		if (jumping) {
+			jumpVec = Vector3.up * (minJump + crouchJumpBoost * jumpBuildTime / timeToFullJump);
+			velocity += jumpVec;
+			jumpBuildTime = 0f;
+			inAir = true;
+			jumping = false;
+			jumpSound.Play();
 		}
 
 		if (turnInput != 0f) {
@@ -103,6 +141,18 @@ public class Player : MonoBehaviour {
 			tuck += dTuck;
 			tuck = tuck < 0f ? 0f : tuck;
 			tuck = 1f < tuck ? 1f : tuck;
+		}
+
+		if (inAir) {
+			velocity += gravityVector * dt;
+			//height = transform.position.y + velocity.y * dt - ground.transform.position.y;
+			height = transform.position.y + Vector3.Project(velocity * dt, planeNorm).y - ground.transform.position.y;
+			if (height <= 0f) {
+				transform.Translate(0f, ground.transform.position.y - transform.position.y, 0f);
+				velocity -= Vector3.Project(velocity, planeNorm);
+				inAir = false;
+				landSound.Play();
+			}
 		}
 
 		if (!inAir) {
@@ -150,13 +200,26 @@ public class Player : MonoBehaviour {
 		tuckInput = amount;
 	}
 
+	public void ReadyJump() {
+		if (!crouching && !crashing) {
+			crouching = true;
+			jumpBuildTime = 0f;
+		}
+	}
+
+	public void ReleaseJump() {
+		crouching = false;
+		jumping = true;
+	}
+
 	public void ChangeSlope(float slope) {
 		this.slope += slope;
 		skis.transform.Rotate(slope, 0f, 0f, Space.World);
 		rotQuat = Quaternion.AngleAxis(slope, Vector3.right);
-		planeNorm = rotQuat * Vector3.up;
+		planeNorm = rotQuat * planeNorm;
 		moveDirection = rotQuat * moveDirection;
 		skiDirection = rotQuat * skiDirection;
+		tanAngle = Mathf.Tan(slope * Mathf.Deg2Rad);
 	}
 
 	public void Crash() {

@@ -7,6 +7,7 @@ public class InputManager : MonoBehaviour {
 	string turnAxis;
 	string brakeAxis;
 	string tuckAxis;
+	string jumpButton;
 
 	Player player;
 
@@ -15,6 +16,7 @@ public class InputManager : MonoBehaviour {
 		turnAxis = "Left Thumb X";
 		brakeAxis = "Left Trigger";
 		tuckAxis = "Right Trigger";
+		jumpButton = "A";
 
 		player = GetComponent<Player>();
 	}
@@ -24,5 +26,11 @@ public class InputManager : MonoBehaviour {
 		player.TurnSkis(Input.GetAxis(turnAxis));
 		player.ApplyBrake(Input.GetAxis(brakeAxis));
 		player.Tuck(Input.GetAxis(tuckAxis));
+		if (Input.GetButton(jumpButton)) {
+			player.ReadyJump();
+		}
+		if (Input.GetButtonUp(jumpButton)) {
+			player.ReleaseJump();
+		}
 	}
 }
